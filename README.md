@@ -1,73 +1,84 @@
-# Welcome to your Lovable project
+# STL Web Viewer
 
-## Project info
+A lightweight 3D STL file viewer built for the SeekMake internship challenge.
 
-**URL**: https://lovable.dev/projects/ecf82921-6f3b-4dd9-8155-b739487c0aef
+## What It Does
 
-## How can I edit this code?
+This application loads STL files and displays them as interactive 3D models. You can rotate, zoom, and inspect your models without installing any software. It handles large files smoothly and works on both desktop and mobile devices.
 
-There are several ways of editing your application.
+## Live Demo
 
-**Use Lovable**
+**Try it here:** [stl-web-viewer.vercel.app](https://stl-web-viewer.vercel.app)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ecf82921-6f3b-4dd9-8155-b739487c0aef) and start prompting.
+**Sample files for testing:** [Google Drive](https://drive.google.com/drive/folders/1S8qYVkqxoe4rWbAVve9n6xp7Nq1uy8XW?usp=sharing)
 
-Changes made via Lovable will be committed automatically to this repo.
+## Getting Started
 
-**Use your preferred IDE**
+Run the project on your machine:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+git clone https://github.com/Hallous-Yassine/STL-WebViewer.git
+cd STL-WebViewer
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Open your browser to `http://localhost:8000`
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## How to Use
 
-**Use GitHub Codespaces**
+1. Upload an STL file by clicking or dragging it into the upload area
+2. Rotate the model by clicking and dragging
+3. Zoom in and out using your mouse wheel
+4. View model details in the side panel
+5. Reset the camera view or upload a new file anytime
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Key Features
 
-## What technologies are used for this project?
+- Handles large files without freezing
+- Works with ASCII and Binary STL formats
+- Smooth camera controls
+- Real-time statistics display
+- Mobile-friendly interface
+- Fast file processing
 
-This project is built with:
+## Project Structure
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+The code is organized into clear sections:
 
-## How can I deploy this project?
+- `components/` - UI elements like file uploader and controls
+- `engine/` - 3D rendering logic and camera controls
+- `pages/` - Main application screens
+- `hooks/` - Reusable React logic
+- `public/` - Web Worker for file parsing
 
-Simply open [Lovable](https://lovable.dev/projects/ecf82921-6f3b-4dd9-8155-b739487c0aef) and click on Share -> Publish.
+## Built With
 
-## Can I connect a custom domain to my Lovable project?
+- React and TypeScript
+- Three.js for 3D graphics
+- Tailwind CSS for styling
+- Vite for fast builds
+- Vercel for hosting
 
-Yes, you can!
+## Technical Highlights
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+The app uses Web Workers to parse files in the background. This keeps the interface responsive even with large models. The 3D engine automatically positions the camera and optimizes rendering for smooth performance.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## Browser Support
+
+Works best on modern browsers with WebGL support. Chrome, Firefox, Safari, and Edge are all supported.
+
+## Notes
+
+Very large files (over 100MB) may take longer to load on older devices. Mobile phones might show slower rendering for extremely detailed models.
+
+## License
+
+MIT License - feel free to use this code for your own projects.
+
+---
+
+**Created by Yassine Hallous**  
+**GitHub:** [Hallous-Yassine/STL-WebViewer](https://github.com/Hallous-Yassine/STL-WebViewer)
+
+*Built for the SeekMake internship application*
