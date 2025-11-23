@@ -2,17 +2,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { RotateCcw, Grid3x3, Info, Axis3d } from 'lucide-react';
+import { RotateCcw, Info } from 'lucide-react';
 
 interface ControlPanelProps {
-  wireframe: boolean;
   showStats: boolean;
-  showAxes: boolean;
-  showGrid: boolean;
-  onWireframeToggle: (value: boolean) => void;
   onStatsToggle: (value: boolean) => void;
-  onAxesToggle: (value: boolean) => void;
-  onGridToggle: (value: boolean) => void;
   onResetCamera: () => void;
   modelInfo?: {
     fileName: string;
@@ -24,14 +18,8 @@ interface ControlPanelProps {
 }
 
 export function ControlPanel({
-  wireframe,
   showStats,
-  showAxes,
-  showGrid,
-  onWireframeToggle,
   onStatsToggle,
-  onAxesToggle,
-  onGridToggle,
   onResetCamera,
   modelInfo
 }: ControlPanelProps) {
@@ -39,19 +27,9 @@ export function ControlPanel({
     <Card className="p-4 space-y-4 bg-card/95 backdrop-blur-sm">
       <div className="space-y-3">
         <h3 className="text-sm font-semibold flex items-center gap-2">
-          <Grid3x3 className="w-4 h-4" />
           View Controls
         </h3>
-        
-        <div className="flex items-center justify-between">
-          <Label htmlFor="wireframe" className="text-sm">Wireframe</Label>
-          <Switch
-            id="wireframe"
-            checked={wireframe}
-            onCheckedChange={onWireframeToggle}
-          />
-        </div>
-        
+
         <div className="flex items-center justify-between">
           <Label htmlFor="stats" className="text-sm">Show Stats</Label>
           <Switch
@@ -60,31 +38,7 @@ export function ControlPanel({
             onCheckedChange={onStatsToggle}
           />
         </div>
-        
-        <div className="flex items-center justify-between">
-          <Label htmlFor="axes" className="text-sm flex items-center gap-1">
-            <Axis3d className="w-3 h-3" />
-            Axes (X,Y,Z)
-          </Label>
-          <Switch
-            id="axes"
-            checked={showAxes}
-            onCheckedChange={onAxesToggle}
-          />
-        </div>
-        
-        <div className="flex items-center justify-between">
-          <Label htmlFor="grid" className="text-sm flex items-center gap-1">
-            <Grid3x3 className="w-3 h-3" />
-            Grid
-          </Label>
-          <Switch
-            id="grid"
-            checked={showGrid}
-            onCheckedChange={onGridToggle}
-          />
-        </div>
-        
+
         <Button
           variant="secondary"
           size="sm"
