@@ -34,6 +34,9 @@ export function CameraController({
   const maxZoom = boundingSphereRadius * 20;
   const minZoom = Math.max(0.1, boundingSphereRadius * 0.01);
 
+  const pinchDistanceRef = useRef(0);
+
+  // Initialize camera based on initial position and target
   useEffect(() => {
     const offset = new THREE.Vector3().subVectors(initialPosition, initialTarget);
     const radius = offset.length();
@@ -53,7 +56,6 @@ export function CameraController({
 
     targetRef.current.copy(initialTarget);
 
-    // Dynamic near/far based on model size
     camera.near = Math.max(0.1, boundingSphereRadius * 0.001);
     camera.far = boundingSphereRadius * 10;
     camera.position.copy(initialPosition);
@@ -62,6 +64,7 @@ export function CameraController({
     invalidate();
   }, [initialPosition, initialTarget, camera, boundingSphereRadius, resetTrigger, invalidate]);
 
+  // Smooth frame update
   useFrame(() => {
     if (!needsUpdateRef.current) return;
 
@@ -91,55 +94,99 @@ export function CameraController({
   useEffect(() => {
     const canvas = gl.domElement;
 
-    const handleMouseDown = (e: MouseEvent) => {
-      if (e.button !== 0) return;
+    const rotationSpeed = 0.005;
+    const zoomSpeed = 0.001;
+
+    const handlePointerDown = (x: number, y: number) => {
       isDraggingRef.current = true;
-      previousMouseRef.current = { x: e.clientX, y: e.clientY };
+      previousMouseRef.current = { x, y };
       canvas.style.cursor = 'grabbing';
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (x: number, y: number) => {
       if (!isDraggingRef.current) return;
-      const deltaX = e.clientX - previousMouseRef.current.x;
-      const deltaY = e.clientY - previousMouseRef.current.y;
-      const rotationSpeed = 0.005;
+      const deltaX = x - previousMouseRef.current.x;
+      const deltaY = y - previousMouseRef.current.y;
 
       targetThetaRef.current += deltaX * rotationSpeed;
       targetPhiRef.current = Math.max(0.01, Math.min(Math.PI - 0.01, targetPhiRef.current - deltaY * rotationSpeed));
 
+      previousMouseRef.current = { x, y };
       needsUpdateRef.current = true;
-      previousMouseRef.current = { x: e.clientX, y: e.clientY };
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       isDraggingRef.current = false;
       canvas.style.cursor = 'grab';
     };
 
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      const zoomSpeed = 0.001;
-      const delta = e.deltaY * zoomSpeed * targetRadiusRef.current;
+    const handleWheel = (deltaY: number) => {
+      const delta = deltaY * zoomSpeed * targetRadiusRef.current;
       targetRadiusRef.current = Math.min(maxZoom, Math.max(minZoom, targetRadiusRef.current + delta));
       needsUpdateRef.current = true;
       invalidate();
     };
 
-    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+    // Mouse events
+    const mouseDown = (e: MouseEvent) => e.button === 0 && handlePointerDown(e.clientX, e.clientY);
+    const mouseMove = (e: MouseEvent) => handlePointerMove(e.clientX, e.clientY);
+    const mouseUp = () => handlePointerUp();
+    const wheel = (e: WheelEvent) => { e.preventDefault(); handleWheel(e.deltaY); };
+
+    canvas.addEventListener('mousedown', mouseDown);
+    window.addEventListener('mousemove', mouseMove);
+    window.addEventListener('mouseup', mouseUp);
+    canvas.addEventListener('wheel', wheel, { passive: false });
+
+    // Touch events
+    const touchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        handlePointerDown(e.touches[0].clientX, e.touches[0].clientY);
+      } else if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        pinchDistanceRef.current = Math.sqrt(dx * dx + dy * dy);
+      }
+    };
+
+    const touchMove = (e: TouchEvent) => {
+      if (e.touches.length === 1 && isDraggingRef.current) {
+        handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+      } else if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const delta = pinchDistanceRef.current - distance;
+        handleWheel(delta);
+        pinchDistanceRef.current = distance;
+      }
+    };
+
+    const touchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) handlePointerUp();
+    };
+
+    canvas.addEventListener('touchstart', touchStart, { passive: false });
+    canvas.addEventListener('touchmove', touchMove, { passive: false });
+    canvas.addEventListener('touchend', touchEnd, { passive: false });
+    canvas.addEventListener('touchcancel', touchEnd, { passive: false });
+
+    // Context menu disable
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
     canvas.style.cursor = 'grab';
-    canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('contextmenu', handleContextMenu);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-    canvas.addEventListener('wheel', handleWheel, { passive: false });
 
     return () => {
-      canvas.removeEventListener('mousedown', handleMouseDown);
-      canvas.removeEventListener('contextmenu', handleContextMenu);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      canvas.removeEventListener('wheel', handleWheel);
+      canvas.removeEventListener('mousedown', mouseDown);
+      window.removeEventListener('mousemove', mouseMove);
+      window.removeEventListener('mouseup', mouseUp);
+      canvas.removeEventListener('wheel', wheel);
+
+      canvas.removeEventListener('touchstart', touchStart);
+      canvas.removeEventListener('touchmove', touchMove);
+      canvas.removeEventListener('touchend', touchEnd);
+      canvas.removeEventListener('touchcancel', touchEnd);
+
       canvas.style.cursor = 'default';
     };
   }, [gl, invalidate, maxZoom, minZoom]);
