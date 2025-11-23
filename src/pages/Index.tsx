@@ -275,14 +275,8 @@ const Index = () => {
             {/* Right Side - Control Panel */}
             <aside className="space-y-4">
               <ControlPanel
-                wireframe={wireframe}
                 showStats={showStats}
-                showAxes={showAxes}
-                showGrid={showGrid}
-                onWireframeToggle={setWireframe}
                 onStatsToggle={setShowStats}
-                onAxesToggle={setShowAxes}
-                onGridToggle={setShowGrid}
                 onResetCamera={handleResetCamera}
                 modelInfo={{
                   fileName: modelData.fileName,
