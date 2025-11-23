@@ -90,7 +90,15 @@ export function CameraController({
   useEffect(() => {
     const canvas = gl.domElement;
 
-    const ROT_SPEED = 0.003;
+    // Base rotation speed (mouse)
+    let ROT_SPEED = 0.003;
+
+    // Detect touch → increase rotation sensitivity
+    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+    if (isTouchDevice) {
+      ROT_SPEED = 0.009;   // 3× faster rotation on phone
+    }
     const ZOOM_SPEED = 0.002;
 
     const startDrag = (x: number, y: number) => {
