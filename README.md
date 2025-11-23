@@ -12,6 +12,16 @@ This application loads STL files and displays them as interactive 3D models. You
 
 **Sample files for testing:** [Google Drive](https://drive.google.com/drive/folders/1S8qYVkqxoe4rWbAVve9n6xp7Nq1uy8XW?usp=sharing)
 
+### Screenshots
+
+<div align="left">
+  <img src="public/sc1.png" alt="STL Viewer Interface" width="500" />
+  <p><em>Main viewer interface with 3D model display</em></p>
+  
+  <img src="public/sc2.png" alt="Model Information Panel" width="500"/>
+  <p><em>Control panel showing model statistics and options</em></p>
+</div>
+
 ## Getting Started
 
 Run the project on your machine:
