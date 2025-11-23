@@ -16,45 +16,48 @@ export function CameraController({
   resetTrigger
 }: CameraControllerProps) {
   const { camera, gl, invalidate } = useThree();
-  const isDraggingRef = useRef(false);
-  const previousMouseRef = useRef({ x: 0, y: 0 });
-  const targetRef = useRef(initialTarget.clone());
 
-  const currentThetaRef = useRef(0);
-  const currentPhiRef = useRef(Math.PI / 4);
-  const currentRadiusRef = useRef(5);
+  const isDragging = useRef(false);
+  const prev = useRef({ x: 0, y: 0 });
+  const target = useRef(initialTarget.clone());
 
-  const targetThetaRef = useRef(0);
-  const targetPhiRef = useRef(Math.PI / 4);
-  const targetRadiusRef = useRef(5);
+  // spherical coordinates
+  const theta = useRef(0);
+  const phi = useRef(Math.PI / 4);
+  const radius = useRef(5);
 
-  const needsUpdateRef = useRef(false);
-  const dampingFactor = 0.15;
+  const tTheta = useRef(0);
+  const tPhi = useRef(Math.PI / 4);
+  const tRadius = useRef(5);
+
+  const needsUpdate = useRef(false);
+
+  const damping = 0.12;
 
   const maxZoom = boundingSphereRadius * 20;
   const minZoom = Math.max(0.1, boundingSphereRadius * 0.01);
 
-  const pinchDistanceRef = useRef(0);
+  const pinch = useRef(0);
 
-  // Initialize camera based on initial position and target
+  /** Initialize */
   useEffect(() => {
-    const offset = new THREE.Vector3().subVectors(initialPosition, initialTarget);
-    const radius = offset.length();
+    const off = new THREE.Vector3().subVectors(initialPosition, initialTarget);
+    const r = off.length();
 
-    if (radius > 0) {
-      const phi = Math.acos(Math.max(-1, Math.min(1, offset.y / radius)));
-      const theta = Math.atan2(offset.z, offset.x);
+    if (r > 0) {
+      const p = Math.acos(Math.min(1, Math.max(-1, off.y / r)));
+      const t = Math.atan2(off.z, off.x);
 
-      currentThetaRef.current = theta;
-      currentPhiRef.current = phi;
-      currentRadiusRef.current = radius;
+      theta.current = t;
+      phi.current = p;
+      radius.current = r;
 
-      targetThetaRef.current = theta;
-      targetPhiRef.current = phi;
-      targetRadiusRef.current = radius;
+      tTheta.current = t;
+      tPhi.current = p;
+      tRadius.current = r;
     }
 
-    targetRef.current.copy(initialTarget);
+    target.current.copy(initialTarget);
 
     camera.near = Math.max(0.1, boundingSphereRadius * 0.001);
     camera.far = boundingSphereRadius * 10;
@@ -64,132 +67,122 @@ export function CameraController({
     invalidate();
   }, [initialPosition, initialTarget, camera, boundingSphereRadius, resetTrigger, invalidate]);
 
-  // Smooth frame update
+  /** Smooth frame update */
   useFrame(() => {
-    if (!needsUpdateRef.current) return;
+    if (!needsUpdate.current) return;
 
-    currentThetaRef.current += (targetThetaRef.current - currentThetaRef.current) * dampingFactor;
-    currentPhiRef.current += (targetPhiRef.current - currentPhiRef.current) * dampingFactor;
-    currentRadiusRef.current += (targetRadiusRef.current - currentRadiusRef.current) * dampingFactor;
+    theta.current += (tTheta.current - theta.current) * damping;
+    phi.current += (tPhi.current - phi.current) * damping;
+    radius.current += (tRadius.current - radius.current) * damping;
 
-    const x = currentRadiusRef.current * Math.sin(currentPhiRef.current) * Math.cos(currentThetaRef.current);
-    const y = currentRadiusRef.current * Math.cos(currentPhiRef.current);
-    const z = currentRadiusRef.current * Math.sin(currentPhiRef.current) * Math.sin(currentThetaRef.current);
+    const x = radius.current * Math.sin(phi.current) * Math.cos(theta.current);
+    const y = radius.current * Math.cos(phi.current);
+    const z = radius.current * Math.sin(phi.current) * Math.sin(theta.current);
 
-    camera.position.set(targetRef.current.x + x, targetRef.current.y + y, targetRef.current.z + z);
-    camera.lookAt(targetRef.current);
+    camera.position.set(target.current.x + x, target.current.y + y, target.current.z + z);
+    camera.lookAt(target.current);
     camera.updateProjectionMatrix();
-
-    if (
-      Math.abs(targetThetaRef.current - currentThetaRef.current) < 0.001 &&
-      Math.abs(targetPhiRef.current - currentPhiRef.current) < 0.001 &&
-      Math.abs(targetRadiusRef.current - currentRadiusRef.current) < 0.01
-    ) {
-      needsUpdateRef.current = false;
-    }
 
     invalidate();
   });
 
+  /** Interaction */
   useEffect(() => {
     const canvas = gl.domElement;
 
-    const rotationSpeed = 0.005;
-    const zoomSpeed = 0.001;
+    const ROT_SPEED = 0.003;
+    const ZOOM_SPEED = 0.002;
 
-    const handlePointerDown = (x: number, y: number) => {
-      isDraggingRef.current = true;
-      previousMouseRef.current = { x, y };
-      canvas.style.cursor = 'grabbing';
+    const startDrag = (x: number, y: number) => {
+      isDragging.current = true;
+      prev.current = { x, y };
+      canvas.style.cursor = "grabbing";
     };
 
-    const handlePointerMove = (x: number, y: number) => {
-      if (!isDraggingRef.current) return;
-      const deltaX = x - previousMouseRef.current.x;
-      const deltaY = y - previousMouseRef.current.y;
+    const moveDrag = (x: number, y: number) => {
+      if (!isDragging.current) return;
 
-      targetThetaRef.current += deltaX * rotationSpeed;
-      targetPhiRef.current = Math.max(0.01, Math.min(Math.PI - 0.01, targetPhiRef.current - deltaY * rotationSpeed));
+      const dx = x - prev.current.x;
+      const dy = y - prev.current.y;
 
-      previousMouseRef.current = { x, y };
-      needsUpdateRef.current = true;
+      tTheta.current += dx * ROT_SPEED;
+      tPhi.current = Math.max(0.05, Math.min(Math.PI - 0.05, tPhi.current - dy * ROT_SPEED));
+
+      prev.current = { x, y };
+      needsUpdate.current = true;
     };
 
-    const handlePointerUp = () => {
-      isDraggingRef.current = false;
-      canvas.style.cursor = 'grab';
+    const stopDrag = () => {
+      isDragging.current = false;
+      canvas.style.cursor = "grab";
     };
 
-    const handleWheel = (deltaY: number) => {
-      const delta = deltaY * zoomSpeed * targetRadiusRef.current;
-      targetRadiusRef.current = Math.min(maxZoom, Math.max(minZoom, targetRadiusRef.current + delta));
-      needsUpdateRef.current = true;
-      invalidate();
+    const zoom = (d: number) => {
+      const delta = d * ZOOM_SPEED * tRadius.current;
+      tRadius.current = Math.max(minZoom, Math.min(maxZoom, tRadius.current + delta));
+      needsUpdate.current = true;
     };
 
-    // Mouse events
-    const mouseDown = (e: MouseEvent) => e.button === 0 && handlePointerDown(e.clientX, e.clientY);
-    const mouseMove = (e: MouseEvent) => handlePointerMove(e.clientX, e.clientY);
-    const mouseUp = () => handlePointerUp();
-    const wheel = (e: WheelEvent) => { e.preventDefault(); handleWheel(e.deltaY); };
+    /** Mouse */
+    const onMouseDown = (e: MouseEvent) => e.button === 0 && startDrag(e.clientX, e.clientY);
+    const onMouseMove = (e: MouseEvent) => moveDrag(e.clientX, e.clientY);
+    const onMouseUp = () => stopDrag();
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      zoom(e.deltaY);
+    };
 
-    canvas.addEventListener('mousedown', mouseDown);
-    window.addEventListener('mousemove', mouseMove);
-    window.addEventListener('mouseup', mouseUp);
-    canvas.addEventListener('wheel', wheel, { passive: false });
-
-    // Touch events
-    const touchStart = (e: TouchEvent) => {
+    /** Touch */
+    const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 1) {
-        handlePointerDown(e.touches[0].clientX, e.touches[0].clientY);
+        startDrag(e.touches[0].clientX, e.touches[0].clientY);
       } else if (e.touches.length === 2) {
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
-        pinchDistanceRef.current = Math.sqrt(dx * dx + dy * dy);
+        pinch.current = Math.hypot(dx, dy);
       }
     };
 
-    const touchMove = (e: TouchEvent) => {
-      if (e.touches.length === 1 && isDraggingRef.current) {
-        handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+    const onTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 1 && isDragging.current) {
+        moveDrag(e.touches[0].clientX, e.touches[0].clientY);
       } else if (e.touches.length === 2) {
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const delta = pinchDistanceRef.current - distance;
-        handleWheel(delta);
-        pinchDistanceRef.current = distance;
+        const dist = Math.hypot(dx, dy);
+        zoom(pinch.current - dist);
+        pinch.current = dist;
       }
+      e.preventDefault();
     };
 
-    const touchEnd = (e: TouchEvent) => {
-      if (e.touches.length === 0) handlePointerUp();
-    };
+    const onTouchEnd = () => stopDrag();
 
-    canvas.addEventListener('touchstart', touchStart, { passive: false });
-    canvas.addEventListener('touchmove', touchMove, { passive: false });
-    canvas.addEventListener('touchend', touchEnd, { passive: false });
-    canvas.addEventListener('touchcancel', touchEnd, { passive: false });
+    /** Add listeners */
+    canvas.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    canvas.addEventListener("wheel", onWheel, { passive: false });
 
-    // Context menu disable
-    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    canvas.addEventListener("touchstart", onTouchStart, { passive: false });
+    canvas.addEventListener("touchmove", onTouchMove, { passive: false });
+    canvas.addEventListener("touchend", onTouchEnd, { passive: false });
 
-    canvas.style.cursor = 'grab';
+    canvas.style.cursor = "grab";
 
     return () => {
-      canvas.removeEventListener('mousedown', mouseDown);
-      window.removeEventListener('mousemove', mouseMove);
-      window.removeEventListener('mouseup', mouseUp);
-      canvas.removeEventListener('wheel', wheel);
+      canvas.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      canvas.removeEventListener("wheel", onWheel);
 
-      canvas.removeEventListener('touchstart', touchStart);
-      canvas.removeEventListener('touchmove', touchMove);
-      canvas.removeEventListener('touchend', touchEnd);
-      canvas.removeEventListener('touchcancel', touchEnd);
+      canvas.removeEventListener("touchstart", onTouchStart);
+      canvas.removeEventListener("touchmove", onTouchMove);
+      canvas.removeEventListener("touchend", onTouchEnd);
 
-      canvas.style.cursor = 'default';
+      canvas.style.cursor = "default";
     };
-  }, [gl, invalidate, maxZoom, minZoom]);
+  }, [gl, minZoom, maxZoom]);
 
   return null;
 }
