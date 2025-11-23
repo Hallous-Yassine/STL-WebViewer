@@ -91,7 +91,7 @@ export function CameraController({
     const canvas = gl.domElement;
 
     // Base rotation speed (mouse)
-    let ROT_SPEED = 0.003;
+    let ROT_SPEED = 0.006;
 
     // Detect touch → increase rotation sensitivity
     const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
